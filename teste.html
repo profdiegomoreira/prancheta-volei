@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Prancheta de Rodízio – Vôlei</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f0f0;
+  }
+
+  h2 {
+    text-align: center;
+  }
+
+  #container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+ canvas {
+  border: 2px solid #000;
+
+  width: 95vw;
+  max-width: 360px;
+
+  height: auto;
+}
+
+  #panel {
+    width: 220px;
+  }
+
+#panel button {
+  font-size: 18px;
+  padding: 12px;
+  cursor: pointer;
+}
+  }
+
+ #msg {
+  margin-top: 15px;
+  font-size: 16px;
+  min-height: 50px;
+  font-weight: bold;
+
+  width: 220px;
+  word-wrap: break-word;
+}
+</style>
+</head>
+
+<body>
+
+<h2 id="titulo">Prancheta de Rodízio – Vôlei</h2>
+<button id="btnVoltar" onclick="voltarInicio()" style="display:none;">
+  ⬅ Voltar
+</button>
+
+<div id="container">
+
+<canvas id="court" width="360" height="640"></canvas>
+
+<div id="panel">
+
+  <div id="botoes">
+  <button onclick="novaFormacao()">➕ Nova formação</button>
+
+  <button onclick="mostrarFormacoes()">
+    📂 Carregar formação
+  </button>
+
+  <button onclick="checkServe()">
+    ✅ Verificar saque
+  </button>
+</div>
+    <div id="msg"></div>
+<div id="lista"></div>
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("court");
+const ctx = canvas.getContext("2d");
+const msg = document.getElementById("msg");
+
+/* ================== QUADRA ================== */
+const margin = 30;
+
+function drawCourt() {
+
+  // fundo fora da quadra (azul)
+  ctx.fillStyle = "#1e90ff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const w = canvas.width - margin * 2;
+  const h = canvas.height - margin * 2;
+
+  // fundo da quadra (laranja)
+  ctx.fillStyle = "#f4a261";
+  ctx.fillRect(margin, margin, w, h);
+
+  // linhas externas da quadra
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(margin, margin, w, h);
+
+  // linha central fixa da quadra
+  const centerLineY = margin + h / 2 + 15;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(margin, centerLineY);
+  ctx.lineTo(margin + w, centerLineY);
+  ctx.stroke();
+
+  // linhas de ataque (3m reais)
+  const attackLineTop = margin + h / 3;
+  const attackLineBottom = margin + (h * 2) / 3;
+
+  ctx.beginPath();
+  ctx.moveTo(margin, attackLineTop);
+  ctx.lineTo(margin + w, attackLineTop);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(margin, attackLineBottom);
+  ctx.lineTo(margin + w, attackLineBottom);
+  ctx.stroke();
+
+  // ===== REDE DE VÔLEI (BRANCA) =====
+  const netY = centerLineY - 15;
+
+  // faixa superior da rede
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(margin, netY - 20, w, 8);
+
+  // malha da rede
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+
+  for (let x = margin; x <= margin + w; x += 10) {
+    ctx.beginPath();
+    ctx.moveTo(x, netY - 20);
+    ctx.lineTo(x, netY + 20);
+    ctx.stroke();
+  }
+
+  for (let y = netY - 20; y <= netY + 20; y += 10) {
+    ctx.beginPath();
+    ctx.moveTo(margin, y);
+    ctx.lineTo(margin + w, y);
+    ctx.stroke();
+  }
+// ===== MARCA D'ÁGUA =====
+ctx.globalAlpha = 0.18;
+
+ctx.fillStyle = "black";
+
+ctx.font = "bold 32px Arial";
+
+ctx.textAlign = "center";
+
+ctx.fillText(
+  "@Prof.DiegoMonkey",
+  canvas.width / 2 + 10,
+  160
+);
+
+ctx.globalAlpha = 1;
+}
+
+/* ================== JOGADORES ================== */
+const players = [
+  // FUNDO
+  { id: 1, x: 260, y: 520, color: "blue"    }, // posição 1 (saque)
+  { id: 6, x: 180, y: 520, color: "brown"   }, // posição 6
+  { id: 5, x: 100, y: 520, color: "purple"  }, // posição 5
+
+  // FRENTE
+  { id: 2, x: 260, y: 440, color: "red"     }, // posição 2
+  { id: 3, x: 180, y: 440, color: "green"   }, // posição 3
+  { id: 4, x: 100, y: 440, color: "#cc5500" }  // posição 4
+];
+
+/* ================== REGRAS ================== */
+const rules = {
+  1: [{p:2,t:"behind"}, {p:6,t:"right"}],
+  2: [{p:1,t:"front"},  {p:3,t:"right"}],
+  3: [{p:6,t:"front"},  {p:2,t:"left"}],
+  4: [{p:5,t:"front"},  {p:3,t:"left"}],
+  5: [{p:4,t:"behind"}, {p:6,t:"left"}],
+  6: [{p:3,t:"behind"}, {p:5,t:"right"}]
+};
+
+/* ================== DESENHO DO JOGADOR ================== */
+function drawPlayer(p) {
+
+  // linhas de referência
+  ctx.strokeStyle = p.color;
+  ctx.globalAlpha = 0.6;
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.moveTo(p.x, 0);
+  ctx.lineTo(p.x, canvas.height);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0, p.y);
+  ctx.lineTo(canvas.width, p.y);
+  ctx.stroke();
+
+  ctx.globalAlpha = 1;
+
+  // jogador
+  ctx.fillStyle = p.color;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // número
+  ctx.fillStyle = "white";
+  ctx.font = "12px Arial";
+  ctx.fillText(p.id, p.x - 4, p.y + 4);
+}
+
+/* ================== REDESENHO ================== */
+function redraw() {
+  drawCourt();
+  players.forEach(drawPlayer);
+}
+
+redraw();
+
+// ===== ARRASTAR COM MOUSE =====
+
+let dragging = null;
+
+function startDrag(x, y) {
+  players.forEach(p => {
+    if (Math.hypot(p.x - x, p.y - y) < 20) {
+      dragging = p;
+    }
+  });
+}
+
+function moveDrag(x, y) {
+  if (!dragging) return;
+
+  dragging.x = x;
+  dragging.y = y;
+
+  redraw();
+}
+
+function endDrag() {
+  dragging = null;
+}
+
+// ===== MOUSE =====
+
+canvas.addEventListener("mousedown", e => {
+  const r = canvas.getBoundingClientRect();
+
+  startDrag(
+    e.clientX - r.left,
+    e.clientY - r.top
+  );
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (!dragging) return;
+
+  const r = canvas.getBoundingClientRect();
+
+  moveDrag(
+    e.clientX - r.left,
+    e.clientY - r.top
+  );
+});
+
+canvas.addEventListener("mouseup", endDrag);
+
+// ===== TOQUE (CELULAR) =====
+
+canvas.addEventListener("touchstart", e => {
+
+  e.preventDefault();
+
+  const r = canvas.getBoundingClientRect();
+
+  const touch = e.touches[0];
+
+  startDrag(
+    touch.clientX - r.left,
+    touch.clientY - r.top
+  );
+
+});
+
+canvas.addEventListener("touchmove", e => {
+
+  e.preventDefault();
+
+  const r = canvas.getBoundingClientRect();
+
+  const touch = e.touches[0];
+
+  moveDrag(
+    touch.clientX - r.left,
+    touch.clientY - r.top
+  );
+
+});
+
+canvas.addEventListener("touchend", endDrag);
+
+function checkServe() {
+
+  msg.style.color = "black";
+  msg.innerHTML = "";
+
+ let envolvidos = new Set();
+let relacoesComErro = [];
+let errosRegistrados = new Set(); // evita duplicação
+
+  // ===== REGRA: INVASÃO DE QUADRA ADVERSÁRIA =====
+  const centerLineY = margin + (canvas.height - margin * 2) / 2 + 15;
+
+  players.forEach(p => {
+    if (p.y < centerLineY) {
+      envolvidos.add(p.id);
+      relacoesComErro.push({
+        p: p.id,
+        texto: "invasão da quadra adversária"
+      });
+    }
+  });
+
+  // ===== REGRA: ERRO DE RODÍZIO =====
+  players.forEach(p => {
+    rules[p.id].forEach(r => {
+      const o = players.find(pl => pl.id === r.p);
+      let erro = false;
+      let texto = "";
+
+      if (r.t === "front" && p.y > o.y) {
+        erro = true;
+        texto = `deveria estar à frente do jogador ${o.id}`;
+      }
+
+      if (r.t === "behind" && p.y < o.y) {
+        erro = true;
+        texto = `deveria estar atrás do jogador ${o.id}`;
+      }
+
+      if (r.t === "right" && p.x < o.x) {
+        erro = true;
+        texto = `deveria estar à direita do jogador ${o.id}`;
+      }
+
+      if (r.t === "left" && p.x > o.x) {
+        erro = true;
+        texto = `deveria estar à esquerda do jogador ${o.id}`;
+      }
+
+      if (erro) {
+
+  // ambos participam da relação quebrada
+  envolvidos.add(p.id);
+  envolvidos.add(o.id);
+
+  const chaveP = `${p.id}-${o.id}-${r.t}`;
+
+if (!errosRegistrados.has(chaveP)) {
+  errosRegistrados.add(chaveP);
+  relacoesComErro.push({
+    p: p.id,
+    texto: texto
+  });
+}
+
+  // erro espelhado do jogador de referência
+let textoEspelhado = "";
+
+if (r.t === "front") {
+  textoEspelhado = `deveria estar atrás do jogador ${p.id}`;
+}
+
+if (r.t === "behind") {
+  textoEspelhado = `deveria estar à frente do jogador ${p.id}`;
+}
+
+if (r.t === "right") {
+  textoEspelhado = `deveria estar à esquerda do jogador ${p.id}`;
+}
+
+if (r.t === "left") {
+  textoEspelhado = `deveria estar à direita do jogador ${p.id}`;
+}
+
+const chaveO = `${o.id}-${p.id}-espelho-${r.t}`;
+
+if (!errosRegistrados.has(chaveO)) {
+  errosRegistrados.add(chaveO);
+  relacoesComErro.push({
+    p: o.id,
+    texto: textoEspelhado
+  });
+}
+
+}
+    });
+  });
+
+  // ===== SE NÃO HOUVER ERRO =====
+  if (envolvidos.size === 0) {
+    msg.style.color = "green";
+    msg.innerHTML = "✅ Saque correto: nenhuma relação de posição foi violada.";
+    return;
+  }
+
+  // ===== MOSTRAR CHECKLIST APENAS DOS ENVOLVIDOS =====
+  msg.innerHTML = "<strong>Jogadores envolvidos no erro:</strong><br><br>";
+
+  envolvidos.forEach(id => {
+
+  const jogador = players.find(p => p.id === id);
+  const erros = relacoesComErro.filter(r => r.p === id);
+
+  // só mostra o jogador se ele tiver erro direto
+  if (erros.length > 0) {
+
+    msg.innerHTML += `<strong>Jogador ${id}:</strong><br>`;
+
+    // ❌ ERROS (vermelho)
+    erros.forEach(r => {
+      msg.innerHTML += `<span style="color:red">❌ ${r.texto}</span><br>`;
+    });
+
+// ✔ ACERTOS (verde) — outras relações corretas
+rules[id].forEach(r => {
+  const o = players.find(pl => pl.id === r.p);
+  let ok = true;
+  let texto = "";
+
+  if (r.t === "front") {
+    ok = jogador.y < o.y;
+    texto = `está à frente do jogador ${o.id}`;
+  }
+
+  if (r.t === "behind") {
+    ok = jogador.y > o.y;
+    texto = `está atrás do jogador ${o.id}`;
+  }
+
+  if (r.t === "right") {
+    ok = jogador.x > o.x;
+    texto = `está à direita do jogador ${o.id}`;
+  }
+
+  if (r.t === "left") {
+    ok = jogador.x < o.x;
+    texto = `está à esquerda do jogador ${o.id}`;
+  }
+
+  // só mostra ✔ se essa relação NÃO foi a que gerou erro
+  const houveErroNessaRelacao = relacoesComErro.some(
+    e => e.p === id && e.texto.includes(o.id)
+  );
+
+  if (ok && !houveErroNessaRelacao) {
+    msg.innerHTML += `<span style="color:green">✔ ${texto}</span><br>`;
+  }
+});
+
+
+    msg.innerHTML += "<br>";
+  }
+});
+
+msg.style.color = "red";
+}
+
+function saveFormation() {
+  const data = players.map(p => ({
+  id: p.id,
+  x: p.x,
+  y: p.y
+}));
+
+const nome = prompt("Nome da formação:");
+
+if (!nome) return;
+
+localStorage.setItem("formacao_" + nome, JSON.stringify(data));
+}
+function loadFormation() {
+
+  const chaves = Object.keys(localStorage)
+    .filter(k => k.startsWith("formacao_"));
+
+  if (chaves.length === 0) {
+    alert("Nenhuma formação salva.");
+    return;
+  }
+
+  let lista = "Formações salvas:\n\n";
+
+  chaves.forEach((k, i) => {
+    lista += `${i + 1} - ${k.replace("formacao_", "")}\n`;
+  });
+
+  const escolha = prompt(lista + "\nDigite o número da formação:");
+
+  if (!escolha) return;
+
+  const index = parseInt(escolha) - 1;
+
+  if (index < 0 || index >= chaves.length) {
+    alert("Escolha inválida.");
+    return;
+  }
+
+  const chave = chaves[index];
+  const data = JSON.parse(localStorage.getItem(chave));
+
+  data.forEach(saved => {
+    const p = players.find(pl => pl.id === saved.id);
+    p.x = saved.x;
+    p.y = saved.y;
+  });
+
+  redraw();
+}
+function mostrarFormacoes() {
+
+  const listaDiv = document.getElementById("lista");
+
+  const chaves = Object.keys(localStorage)
+    .filter(k => k.startsWith("formacao_"));
+
+  listaDiv.innerHTML = "";
+
+  chaves.forEach(k => {
+
+    const nome = k.replace("formacao_", "");
+
+    const btn = document.createElement("button");
+    btn.innerText = nome;
+
+    btn.onclick = () => {
+
+  btnPlay.style.display = "block";
+  btnEditar.style.display = "block";
+  btnExcluir.style.display = "block";
+
+  const data = JSON.parse(localStorage.getItem(k));
+
+  data.forEach(saved => {
+    const p = players.find(pl => pl.id === saved.id);
+    p.x = saved.x;
+    p.y = saved.y;
+  });
+
+  // 🔥 nome da formação no topo
+  const nome = k.replace("formacao_", "");
+  document.getElementById("titulo").innerText = nome;
+
+  // 🔥 esconde botões iniciais
+  document.getElementById("botoes").style.display = "block";
+
+  // 🔥 mostra botão voltar
+  document.getElementById("btnVoltar").style.display = "block";
+
+  // 🔥 limpa lista da tela
+  document.getElementById("lista").innerHTML = "";
+
+  redraw();
+};
+
+    const container = document.createElement("div");
+
+container.style.display = "flex";
+container.style.gap = "5px";
+container.style.marginBottom = "5px";
+
+// botão principal (formação)
+btn.style.flex = "1";
+
+// botões novos
+const btnPlay = document.createElement("button");
+btnPlay.innerText = "▶";
+
+// BOTÃO EDITAR
+const btnEditar = document.createElement("button");
+btnEditar.innerText = "✏️";
+
+btnEditar.onclick = () => {
+
+  const novoNome = prompt("Novo nome da formação:", nome);
+
+  if (!novoNome) return;
+
+  const dados = localStorage.getItem(k);
+
+  localStorage.removeItem(k);
+
+  localStorage.setItem("formacao_" + novoNome, dados);
+
+  mostrarFormacoes();
+};
+
+
+// BOTÃO EXCLUIR
+const btnExcluir = document.createElement("button");
+btnExcluir.innerText = "🗑";
+
+btnExcluir.onclick = () => {
+
+  const confirmar = confirm(`Excluir a formação "${nome}"?`);
+
+  if (!confirmar) return;
+
+  localStorage.removeItem(k);
+
+  mostrarFormacoes();
+};
+
+btnPlay.style.display = "none";
+btnEditar.style.display = "block";
+// btnExcluir.style.display = "none";
+
+// tamanho dos botões pequenos
+btnPlay.style.width = "40px";
+btnEditar.style.width = "40px";
+btnExcluir.style.width = "40px";
+
+// montar estrutura
+container.appendChild(btn);
+container.appendChild(btnPlay);
+container.appendChild(btnEditar);
+container.appendChild(btnExcluir);
+
+
+// adicionar na tela
+listaDiv.appendChild(container);
+  });
+}
+function novaFormacao() {
+
+  const nome = prompt("Nome da nova formação:");
+
+  if (!nome) return;
+
+  // pega posição atual dos jogadores
+  const data = players.map(p => ({
+    id: p.id,
+    x: p.x,
+    y: p.y
+  }));
+
+  // salva no localStorage
+  localStorage.setItem("formacao_" + nome, JSON.stringify(data));
+
+  // muda o título
+  document.getElementById("titulo").innerText = nome;
+
+  // esconde os botões
+  document.getElementById("botoes").style.display = "none";
+
+  msg.innerHTML = "Nova formação criada.";
+
+  document.getElementById("btnVoltar").style.display = "block";
+
+  // atualiza a lista
+ 
+}
+function voltarInicio() {
+
+  document.getElementById("titulo").innerText = "Prancheta de Rodízio – Vôlei";
+
+  document.getElementById("botoes").style.display = "block";
+
+  document.getElementById("btnVoltar").style.display = "none";
+
+  msg.innerHTML = "";
+}
+</script>
+
+</body>
+</html>
