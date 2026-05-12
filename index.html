@@ -316,6 +316,8 @@ canvas.addEventListener("touchstart", e => {
 
 canvas.addEventListener("touchmove", e => {
 
+  if (!dragging) return;
+
   e.preventDefault();
 
   const r = canvas.getBoundingClientRect();
@@ -327,7 +329,7 @@ canvas.addEventListener("touchmove", e => {
     touch.clientY - r.top
   );
 
-});
+});;
 
 canvas.addEventListener("touchend", endDrag);
 
