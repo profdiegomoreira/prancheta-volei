@@ -57,6 +57,27 @@
 
   width: 220px;
   word-wrap: break-word;
+
+}
+#scrollBtn {
+  position: fixed;
+  right: 15px;
+  bottom: 20px;
+
+  width: 55px;
+  height: 55px;
+
+  border: none;
+  border-radius: 50%;
+
+  font-size: 28px;
+
+  background: #222;
+  color: white;
+
+  z-index: 9999;
+
+  opacity: 0.8;
 }
 </style>
 </head>
@@ -705,6 +726,36 @@ function voltarInicio() {
   msg.innerHTML = "";
 }
 </script>
+<button id="scrollBtn">⬇</button>
 
+<script>
+const scrollBtn = document.getElementById("scrollBtn");
+
+scrollBtn.addEventListener("click", () => {
+  window.scrollBy({
+    top: 400,
+    behavior: "smooth"
+  });
+});
+
+window.addEventListener("scroll", () => {
+
+  const chegouNoFim =
+    window.innerHeight + window.scrollY >= document.body.offsetHeight - 20;
+
+  scrollBtn.innerText = chegouNoFim ? "⬆" : "⬇";
+});
+
+scrollBtn.addEventListener("click", () => {
+
+  const chegouNoFim =
+    window.innerHeight + window.scrollY >= document.body.offsetHeight - 20;
+
+  window.scrollBy({
+    top: chegouNoFim ? -400 : 400,
+    behavior: "smooth"
+  });
+});
+</script>
 </body>
 </html>
