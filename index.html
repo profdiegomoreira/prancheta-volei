@@ -205,14 +205,14 @@ ctx.globalAlpha = 1;
 /* ================== JOGADORES ================== */
 const players = [
   // FUNDO
-  { id: 1, x: 260, y: 520, color: "blue"    }, // posição 1 (saque)
-  { id: 6, x: 180, y: 520, color: "brown"   }, // posição 6
-  { id: 5, x: 100, y: 520, color: "purple"  }, // posição 5
+  { id: "A", x: 260, y: 520, color: "blue"    },
+  { id: "B", x: 180, y: 520, color: "brown"   },
+  { id: "C", x: 100, y: 520, color: "purple"  },
 
   // FRENTE
-  { id: 2, x: 260, y: 440, color: "red"     }, // posição 2
-  { id: 3, x: 180, y: 440, color: "green"   }, // posição 3
-  { id: 4, x: 100, y: 440, color: "#cc5500" }  // posição 4
+  { id: "D", x: 260, y: 440, color: "red"     },
+  { id: "E", x: 180, y: 440, color: "green"   },
+  { id: "F", x: 100, y: 440, color: "#cc5500" }
 ];
 
 /* ================== REGRAS ================== */
@@ -258,7 +258,12 @@ function drawPlayer(p) {
   // número
   ctx.fillStyle = "white";
   ctx.font = "12px Arial";
-  ctx.fillText(p.id, p.x - 4, p.y + 4);
+  ctx.font = "bold 12px Arial";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+
+ctx.fillText(p.id, p.x, p.y);
+  
 }
 
 /* ================== REDESENHO ================== */
@@ -272,7 +277,35 @@ redraw();
 // ===== ARRASTAR COM MOUSE =====
 
 let dragging = null;
+canvas.addEventListener("dblclick", e => {
 
+  const r = canvas.getBoundingClientRect();
+
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+
+  players.forEach(p => {
+
+    if (Math.hypot(p.x - x, p.y - y) < 20) {
+
+      let novoNome = prompt(
+        "Digite até 3 letras:",
+        p.id
+      );
+
+      if (novoNome === null) return;
+
+      novoNome = novoNome
+        .toUpperCase()
+        .substring(0,3);
+
+      p.id = novoNome;
+
+      redraw();
+    }
+  });
+});
+  
 function startDrag(x, y) {
   players.forEach(p => {
     if (Math.hypot(p.x - x, p.y - y) < 20) {
