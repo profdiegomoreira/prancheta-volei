@@ -24,15 +24,29 @@
 
   overflow-y: auto;
 }
-  h2 {
+#topo {
     position: sticky;
     top: 0;
-    background: #f0f0f0;
-    padding: 12px 0;
-    margin: 0 0 15px 0;
-    text-align: center;
     z-index: 1000;
-    border-bottom: 2px solid #ddd;
+
+    background: #f0f0f0;
+    padding: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-bottom: 2px solid #ccc;
+}
+
+#topo h2 {
+    margin: 0;
+    text-align: center;
+}
+
+#btnVoltar {
+    position: absolute;
+    left: 10px;
 }
 
  canvas {
