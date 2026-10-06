@@ -342,7 +342,7 @@ function criarInputs() {
   const area = document.getElementById("inputsJogadores");
   area.innerHTML = "";
 
-  players.forEach((p, i) => {
+  [...players].sort((a, b) => a.id - b.id).forEach((p, i) => {
 
     const input = document.createElement("input");
 
