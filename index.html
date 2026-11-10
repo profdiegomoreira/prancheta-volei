@@ -798,8 +798,7 @@ container.appendChild(btnExcluir);
 listaDiv.appendChild(container);
   });
 }
-function novaFormacao() {
-  function abrirPastaRodizio(nome) {
+function abrirPastaRodizio(nome) {
   const listaDiv = document.getElementById("lista");
 
   document.getElementById("titulo").innerText = nome;
@@ -830,49 +829,34 @@ function novaFormacao() {
       area.appendChild(btn);
     });
   }
+
+  if (nome === "4x2 básico") {
+    area.innerHTML = "<p>Posicionamentos do sistema 4x2 aparecerão aqui.</p>";
+  }
 }
-  const listaDiv = document.getElementById("lista");
 
-  document.getElementById("titulo").innerText = nome;
 
-  listaDiv.innerHTML = `
-    <button onclick="mostrarFormacoes()">
-      ⬅ Voltar às pastas
-    </button>
-
-    <h3>📁 ${nome}</h3>
-
-    <p>Posicionamentos deste sistema aparecerão aqui.</p>
-  `;
-
-}
+function novaFormacao() {
 
   const nome = prompt("Nome da nova formação:");
 
   if (!nome) return;
 
-  // pega posição atual dos jogadores
   const data = players.map(p => ({
     id: p.id,
     x: p.x,
     y: p.y
   }));
 
-  // salva no localStorage
   localStorage.setItem("formacao_" + nome, JSON.stringify(data));
 
-  // muda o título
   document.getElementById("titulo").innerText = nome;
 
-  // esconde os botões
   document.getElementById("botoes").style.display = "none";
 
   msg.innerHTML = "Nova formação criada.";
 
   document.getElementById("btnVoltar").style.display = "block";
-
-  // atualiza a lista
- 
 }
 function voltarInicio() {
 
