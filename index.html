@@ -811,6 +811,37 @@ function novaFormacao() {
 
     <h3>📁 ${nome}</h3>
 
+    <div id="listaPosicionamentos"></div>
+  `;
+
+  const area = document.getElementById("listaPosicionamentos");
+
+  if (nome === "5x1 do meta") {
+    ["P1", "P2", "P3", "P4", "P5", "P6"].forEach(posicao => {
+      const btn = document.createElement("button");
+
+      btn.innerText = posicao;
+      btn.style.display = "block";
+      btn.style.width = "100%";
+      btn.style.marginBottom = "8px";
+      btn.style.padding = "12px";
+      btn.style.fontSize = "18px";
+
+      area.appendChild(btn);
+    });
+  }
+}
+  const listaDiv = document.getElementById("lista");
+
+  document.getElementById("titulo").innerText = nome;
+
+  listaDiv.innerHTML = `
+    <button onclick="mostrarFormacoes()">
+      ⬅ Voltar às pastas
+    </button>
+
+    <h3>📁 ${nome}</h3>
+
     <p>Posicionamentos deste sistema aparecerão aqui.</p>
   `;
 
