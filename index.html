@@ -674,6 +674,25 @@ function mostrarFormacoes() {
 
   listaDiv.innerHTML = "";
 
+  // ===== PASTAS DE SISTEMAS DE JOGO =====
+const pastas = ["5x1 do meta", "4x2 básico"];
+
+pastas.forEach(nome => {
+  const pasta = document.createElement("button");
+
+  pasta.innerText = "📁 " + nome;
+  pasta.style.display = "block";
+  pasta.style.width = "100%";
+  pasta.style.marginBottom = "10px";
+  pasta.style.padding = "15px";
+  pasta.style.fontSize = "18px";
+  pasta.style.textAlign = "left";
+
+  pasta.onclick = () => abrirPastaRodizio(nome);
+
+  listaDiv.appendChild(pasta);
+});
+
   chaves.forEach(k => {
 
     const nome = k.replace("formacao_", "");
@@ -780,6 +799,22 @@ listaDiv.appendChild(container);
   });
 }
 function novaFormacao() {
+  function abrirPastaRodizio(nome) {
+  const listaDiv = document.getElementById("lista");
+
+  document.getElementById("titulo").innerText = nome;
+
+  listaDiv.innerHTML = `
+    <button onclick="mostrarFormacoes()">
+      ⬅ Voltar às pastas
+    </button>
+
+    <h3>📁 ${nome}</h3>
+
+    <p>Posicionamentos deste sistema aparecerão aqui.</p>
+  `;
+
+}
 
   const nome = prompt("Nome da nova formação:");
 
